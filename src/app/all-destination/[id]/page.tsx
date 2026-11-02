@@ -183,6 +183,7 @@ export default async function DestinationDetailsPage({
             <BookingCard
               price={destination.price}
               departureDate={destination.departureDate}
+              destination={destination}
             />
           </div>
         </div>

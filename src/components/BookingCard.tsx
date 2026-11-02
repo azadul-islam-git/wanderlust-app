@@ -1,11 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { ArrowRight, Check } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { authClient } from "@/lib/auth-client";
+
+interface IDestination {
+  _id: string;
+  name: string;
+  country: string;
+  category: string;
+  price: string;
+  duration: string;
+  departureDate: string;
+  imageUrl: string;
+  description: string;
+}
 
 const perks = [
   "Free cancellation up to 7 days",
@@ -23,14 +36,41 @@ const perks = [
 export default function BookingCard({
   price,
   departureDate,
+  destination,
 }: {
   price: string;
   departureDate: string;
+  destination: IDestination;
 }) {
+  const { data: session } = authClient.useSession();
+  const user = session?.user;
+
   const [isBooking, setIsBooking] = useState(false);
   const [booked, setBooked] = useState(false);
 
-  function handleBook() {
+  async function handleBooking(e: React.SubmitEvent<HTMLElement>) {
+    e.preventDefault();
+
+    const departureDate = e.target.departureDate.value;
+    const data = {
+      userName: user?.name,
+      email: user?.email,
+      image: user?.image,
+      ...destination,
+      departureDate: departureDate,
+      bookingDate: new Date(),
+    };
+
+    const res = await fetch("http://localhost:8000/booking", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+    const bookingData = await res.json();
+    console.log(bookingData);
+
     setIsBooking(true);
     window.setTimeout(() => {
       setIsBooking(false);
@@ -46,23 +86,24 @@ export default function BookingCard({
 
       <div className="my-5 border-t border-neutral-200" />
 
-      <Input
-        type="date"
-        defaultValue={departureDate}
-        aria-label="Departure date"
-        className="h-9 rounded-md border border-transparent bg-slate-50 px-3 focus-visible:bg-white"
-      />
+      <form onSubmit={handleBooking}>
+        <Input
+          type="date"
+          defaultValue={departureDate}
+          name="departureDate"
+          aria-label="Departure date"
+          className="h-9 rounded-md border border-transparent bg-slate-50 px-3 focus-visible:bg-white"
+        />
 
-      <Button
-        type="button"
-        onClick={handleBook}
-        disabled={isBooking}
-        className="mt-4 w-full bg-cyan-500 py-6 text-white hover:bg-cyan-600"
-      >
-        {isBooking ? "Booking…" : "Book Now"}
-        <ArrowRight aria-hidden />
-      </Button>
-
+        <Button
+          type="submit"
+          disabled={isBooking}
+          className="mt-4 w-full bg-cyan-500 py-6 text-white hover:bg-cyan-600"
+        >
+          {isBooking ? "Booking…" : "Book Now"}
+          <ArrowRight aria-hidden />
+        </Button>
+      </form>
       {booked ? (
         <p
           role="status"
